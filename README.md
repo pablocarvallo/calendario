@@ -22,6 +22,20 @@ Calendario diario para el iPhone con el estilo de una hoja de calendario de taco
 2. Abre la dirección en Safari.
 3. Toca **Compartir → Agregar a inicio**.
 
+## Widget para iPhone
+
+iOS no permite widgets para apps web, así que el widget usa la app gratuita **Scriptable**. Hay tamaños pequeño, mediano y grande para la pantalla de inicio, y circular, rectangular y en línea para la pantalla bloqueada. Al tocarlo se abre el calendario en Safari.
+
+1. Instala **Scriptable** desde la App Store.
+2. Abre en Safari [el código del widget](https://raw.githubusercontent.com/pablocarvallo/calendario/main/widget/calendario-widget.js), selecciona todo el texto y cópialo.
+3. En Scriptable, toca **+**, pega el código y, arriba, cambia el nombre del script a **Calendario**. Toca **▶** para ver una vista previa.
+4. En la pantalla de inicio, mantén presionado un espacio vacío, toca **Editar → Agregar widget**, busca **Scriptable**, elige el tamaño y toca **Agregar widget**.
+5. Mantén presionado el widget nuevo, toca **Editar widget** y en **Script** elige **Calendario**.
+
+Para la pantalla bloqueada: mantenla presionada, toca **Personalizar → Pantalla bloqueada**, agrega un widget de Scriptable y elige el script **Calendario**.
+
+El widget se actualiza solo cada medianoche. Si publicas la app en otra dirección (por ejemplo, Vercel), cambia la línea `APP_URL` al comienzo del script.
+
 ## Actualizar los feriados
 
-Los feriados están en `index.html`, en los objetos `CHILE` y `CEPAL` (formato `"MM-DD": "Nombre"`), y el año en la constante `YEAR`.
+Los feriados están en los objetos `CHILE` y `CEPAL` (formato `"MM-DD": "Nombre"`) y el año en la constante `YEAR`, en dos archivos: `index.html` (la app) y `widget/calendario-widget.js` (el widget). Después de cambiar el widget, vuelve a copiarlo en Scriptable.
