@@ -1,6 +1,6 @@
 # Calendario Chile y CEPAL
 
-Calendario diario para el iPhone con el estilo de una hoja de calendario de taco. Muestra la fecha del día con un número grande e indica si es feriado de Chile, de la CEPAL o de ambos. Abajo aparecen el día anterior y el siguiente con su estado, y el ícono de calendario abre los 12 meses de 2026 para consultar cualquier fecha.
+Calendario diario para el iPhone con el estilo de una hoja de calendario de taco. Muestra la fecha del día con un número grande e indica si es feriado de Chile, de la CEPAL o de ambos; los días hábiles no llevan etiqueta y los domingos se muestran en rojo. Abajo aparecen el día anterior y el siguiente con su estado, y el ícono de calendario abre los 12 meses de 2026 para consultar cualquier fecha.
 
 ## Uso
 
@@ -12,7 +12,7 @@ Calendario diario para el iPhone con el estilo de una hoja de calendario de taco
 
 | Color | Significado |
 |---|---|
-| Rojo | Feriado de Chile (incluye todos los domingos) |
+| Rojo | Domingos y feriados de Chile |
 | Ámbar | Feriado de la CEPAL |
 | Rojo con sombra ámbar | Feriado de Chile y de la CEPAL |
 

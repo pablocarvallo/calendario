@@ -89,7 +89,7 @@ button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
   font-size:min(64vw,37vh,17rem);line-height:.86;letter-spacing:-.035em;font-variant-numeric:lining-nums tabular-nums;
   color:var(--num);text-shadow:.05em .045em 0 var(--num-shadow)
 }
-.status{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.status{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-height:30px}
 .chip{display:inline-flex;align-items:center;gap:.5em;padding:.5em .95em;border-radius:999px;font-size:.92rem;font-weight:700;line-height:1;background:var(--soft);color:var(--muted)}
 .chip::before{content:"";width:.5em;height:.5em;border-radius:50%;background:var(--dot-none)}
 .chip.chile{background:var(--chile-tint);color:var(--chile-ink)}
@@ -113,12 +113,12 @@ button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .nb .st::before{content:"";width:8px;height:8px;border-radius:50%;flex:none;background:var(--dot-none)}
 .nb[data-kind="chile"] .n,.nb[data-kind="both"] .n{color:var(--chile)}
 .nb[data-kind="cepal"] .n{color:var(--cepal)}
-.nb[data-kind="chile"] .st{color:var(--chile-ink)}
-.nb[data-kind="chile"] .st::before{background:var(--chile)}
-.nb[data-kind="cepal"] .st{color:var(--cepal-ink)}
-.nb[data-kind="cepal"] .st::before{background:var(--cepal-dot)}
-.nb[data-kind="both"] .st{color:var(--chile-ink)}
-.nb[data-kind="both"] .st::before{background:linear-gradient(90deg,var(--chile) 50%,var(--cepal-dot) 50%)}
+.nb[data-tag="chile"] .st{color:var(--chile-ink)}
+.nb[data-tag="chile"] .st::before{background:var(--chile)}
+.nb[data-tag="cepal"] .st{color:var(--cepal-ink)}
+.nb[data-tag="cepal"] .st::before{background:var(--cepal-dot)}
+.nb[data-tag="both"] .st{color:var(--chile-ink)}
+.nb[data-tag="both"] .st::before{background:linear-gradient(90deg,var(--chile) 50%,var(--cepal-dot) 50%)}
 
 .main.go-next{animation:inNext .26s ease-out}
 .main.go-prev{animation:inPrev .26s ease-out}
@@ -255,7 +255,7 @@ body{margin:0;font-size:14px}
       <span><i class="lc"></i>Feriado Chile</span>
       <span><i class="le"></i>Feriado CEPAL</span>
       <span><i class="lb"></i>Ambos</span>
-      <span><i class="ls">D</i>Domingos, feriado Chile</span>
+      <span><i class="ls">D</i>Domingos</span>
     </div>
     <div class="year" id="yearView"></div>
     <div id="monthView" hidden></div>
@@ -314,20 +314,21 @@ body{margin:0;font-size:14px}
 
   function info(d) {
     const dow = d.getDay();
-    if (!inYear(d)) return { kind: "out", dow };
+    if (!inYear(d)) return { kind: "out", tag: null, dow };
     const k = keyOf(d);
     const chileName = CHILE[k] || null, cepalName = CEPAL[k] || null;
-    const chile = !!chileName || dow === 0;
-    const cepal = !!cepalName;
-    const kind = chile && cepal ? "both" : chile ? "chile" : cepal ? "cepal" : "none";
-    return { kind, dow, chile, cepal, named: !!(chileName || cepalName), name: chileName || cepalName || (dow === 0 ? "Día domingo" : null) };
+    // kind: color de la fecha (los domingos van en rojo); tag: feriado con nombre que se indica en texto
+    const red = !!chileName || dow === 0;
+    const kind = red && cepalName ? "both" : red ? "chile" : cepalName ? "cepal" : "none";
+    const tag = chileName && cepalName ? "both" : chileName ? "chile" : cepalName ? "cepal" : null;
+    return { kind, tag, dow, chile: !!chileName, cepal: !!cepalName, named: !!tag, name: chileName || cepalName };
   }
   function label(i) {
-    if (i.kind === "both") return "Feriado Chile y CEPAL";
-    if (i.kind === "chile") return "Feriado Chile";
-    if (i.kind === "cepal") return "Feriado CEPAL";
     if (i.kind === "out") return "Fuera de " + YEAR;
-    return i.dow === 6 ? "No es feriado" : "Día hábil";
+    if (i.tag === "both") return "Feriado Chile y CEPAL";
+    if (i.tag === "chile") return "Feriado Chile";
+    if (i.tag === "cepal") return "Feriado CEPAL";
+    return "";
   }
   function nextHoliday(d) {
     for (let x = add(d, 1); inYear(x); x = add(x, 1)) if (info(x).named) return x;
@@ -348,8 +349,11 @@ body{margin:0;font-size:14px}
     el.disabled = i.kind === "out";
     el.querySelector(".wd span").textContent = cap(DIAS[d.getDay()]);
     el.querySelector(".n").textContent = d.getDate();
-    el.querySelector(".st").textContent = label(i);
-    el.setAttribute("aria-label", cap(DIAS[d.getDay()]) + " " + d.getDate() + " de " + MESES[d.getMonth()] + ": " + label(i));
+    const st = el.querySelector(".st"), lb = label(i);
+    el.dataset.tag = i.tag || "";
+    st.textContent = lb;
+    st.hidden = !lb;
+    el.setAttribute("aria-label", cap(DIAS[d.getDay()]) + " " + d.getDate() + " de " + MESES[d.getMonth()] + (lb ? ": " + lb : ""));
   }
 
   function render(dir) {
@@ -364,7 +368,7 @@ body{margin:0;font-size:14px}
     let chips = "";
     if (i.chile) chips += '<span class="chip chile">Feriado Chile</span>';
     if (i.cepal) chips += '<span class="chip cepal">Feriado CEPAL</span>';
-    $status.innerHTML = chips || '<span class="chip">' + label(i) + "</span>";
+    $status.innerHTML = chips;
 
     if (i.name) {
       $hname.className = "hname";
@@ -422,8 +426,8 @@ body{margin:0;font-size:14px}
   // ---------- Vista de meses ----------
   function dayClass(dt) {
     const i = info(dt), c = [];
-    if (i.named) c.push(i.kind);
-    else if (i.kind === "chile") c.push("sun");
+    if (i.tag) c.push(i.tag);
+    if (i.dow === 0 && !i.chile) c.push("sun");
     if (same(dt, today())) c.push("today");
     if (same(dt, cur)) c.push("sel");
     return c.join(" ");
@@ -458,8 +462,8 @@ body{margin:0;font-size:14px}
     h += '</div><div class="wk" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="mgrid">';
     for (let k = 0; k < offset(m); k++) h += "<span></span>";
     for (let d = 1; d <= daysIn(m); d++) {
-      const dt = ymd(YEAR, m, d);
-      h += '<button type="button" class="d ' + dayClass(dt) + '" data-d="' + d + '" aria-label="' + cap(DIAS[dt.getDay()]) + " " + d + " de " + MESES[m] + ": " + label(info(dt)) + '">' + d + "</button>";
+      const dt = ymd(YEAR, m, d), lb = label(info(dt));
+      h += '<button type="button" class="d ' + dayClass(dt) + '" data-d="' + d + '" aria-label="' + cap(DIAS[dt.getDay()]) + " " + d + " de " + MESES[m] + (lb ? ": " + lb : "") + '">' + d + "</button>";
     }
     h += "</div></div>";
 
@@ -467,8 +471,8 @@ body{margin:0;font-size:14px}
     for (let d = 1; d <= daysIn(m); d++) {
       const dt = ymd(YEAR, m, d), i = info(dt);
       if (!i.named) continue;
-      const who = i.kind === "both" ? "Chile y CEPAL" : i.kind === "chile" ? "Chile" : "CEPAL";
-      list += '<li><button type="button" data-d="' + d + '" data-kind="' + i.kind + '"><span class="ld"><b>' + d + "</b><small>" + DIAS_C[dt.getDay()] + '</small></span><span class="ln"><strong>' + i.name + "</strong><span>Feriado " + who + "</span></span></button></li>";
+      const who = i.tag === "both" ? "Chile y CEPAL" : i.tag === "chile" ? "Chile" : "CEPAL";
+      list += '<li><button type="button" data-d="' + d + '" data-kind="' + i.tag + '"><span class="ld"><b>' + d + "</b><small>" + DIAS_C[dt.getDay()] + '</small></span><span class="ln"><strong>' + i.name + "</strong><span>Feriado " + who + "</span></span></button></li>";
     }
     h += '<p class="sec">Feriados de ' + MESES[m] + "</p>";
     h += list ? '<ul class="hol">' + list + "</ul>" : '<p class="empty">Este mes no tiene feriados, aparte de los domingos.</p>';
