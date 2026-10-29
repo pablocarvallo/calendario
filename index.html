@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calendario">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E4ECE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1310" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Calendario Chile y CEPAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Hoja de taco de calendario: una página por día sobre fondo salvia; número grande impreso con un desfase de color que indica el tipo de feriado */
+:root{
+  --bg:#E4ECE6;
+  --paper:#FFFFFF;
+  --ink:#1B2620;
+  --muted:#5F6D65;
+  --line:#DCE4DE;
+  --soft:#EFF4F0;
+  --sage-tint:#D3E5D8;
+  --chile:#D9362C;
+  --chile-ink:#B32A21;
+  --chile-tint:#FCDCD7;
+  --cepal:#C77D00;
+  --cepal-ink:#8A5000;
+  --cepal-dot:#EFA51B;
+  --cepal-tint:#FCEDC7;
+  --dot-none:#A9B5AD;
+  --lift:0 1px 2px rgb(27 38 32 / .06), 0 22px 44px -18px rgb(27 38 32 / .22);
+  --f-display:"Bricolage Grotesque","Avenir Next Condensed",system-ui,sans-serif;
+  --f-body:"Figtree",-apple-system,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1310; --paper:#17201A; --ink:#E7EFE9; --muted:#97A59C; --line:#27322B; --soft:#1F2922;
+    --sage-tint:#2A3D30; --chile:#FF6B5E; --chile-ink:#FF9F94; --chile-tint:#44201C;
+    --cepal:#F4B740; --cepal-ink:#F6C766; --cepal-dot:#F4B740; --cepal-tint:#3B2D10; --dot-none:#56645B;
+    --lift:0 1px 2px rgb(0 0 0 / .4), 0 22px 44px -18px rgb(0 0 0 / .7);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1310; --paper:#17201A; --ink:#E7EFE9; --muted:#97A59C; --line:#27322B; --soft:#1F2922;
+  --sage-tint:#2A3D30; --chile:#FF6B5E; --chile-ink:#FF9F94; --chile-tint:#44201C;
+  --cepal:#F4B740; --cepal-ink:#F6C766; --cepal-dot:#F4B740; --cepal-tint:#3B2D10; --dot-none:#56645B;
+  --lift:0 1px 2px rgb(0 0 0 / .4), 0 22px 44px -18px rgb(0 0 0 / .7);
+  color-scheme:dark;
+}
+
+html{box-sizing:border-box;height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* ---------- Hoja del día ---------- */
+.app{min-height:100%;display:flex;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet{
+  --num:var(--ink); --num-shadow:var(--sage-tint);
+  flex:1;width:100%;max-width:440px;margin-inline:auto;background:var(--paper);border-radius:30px;box-shadow:var(--lift);
+  display:flex;flex-direction:column;padding:12px 16px 16px;touch-action:pan-y;-webkit-user-select:none;user-select:none
+}
+.sheet[data-kind="chile"]{--num:var(--chile);--num-shadow:var(--chile-tint)}
+.sheet[data-kind="cepal"]{--num:var(--cepal);--num-shadow:var(--cepal-tint)}
+.sheet[data-kind="both"]{--num:var(--chile);--num-shadow:var(--cepal-tint)}
+
+.holes{height:12px;width:min(64%,240px);margin:0 auto 6px;background:radial-gradient(circle,var(--bg) 0 4.5px,transparent 5px) center/22px 12px repeat-x}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-left:4px}
+.yday{font-size:.76rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.top-actions{display:flex;align-items:center;gap:8px}
+.pill{height:36px;padding:0 15px;border-radius:999px;background:var(--ink);color:var(--paper);font-weight:700;font-size:.85rem}
+.icon-btn{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:var(--soft);color:var(--ink);flex:none}
+.icon-btn svg{width:22px;height:22px}
+
+.main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-block:10px 14px}
+.month{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(1.55rem,7.8vw,2.15rem);line-height:1;letter-spacing:.16em;padding-left:.16em;text-transform:uppercase}
+.weekday{margin:6px 0 0;font-family:var(--f-display);font-weight:500;font-size:clamp(1.2rem,6vw,1.55rem);line-height:1.1;color:var(--muted)}
+.num{
+  margin:8px 0 14px;padding-right:.05em;font-family:var(--f-display);font-weight:800;font-stretch:75%;
+  font-size:min(64vw,37vh,17rem);line-height:.86;letter-spacing:-.035em;font-variant-numeric:lining-nums tabular-nums;
+  color:var(--num);text-shadow:.05em .045em 0 var(--num-shadow)
+}
+.status{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:.5em;padding:.5em .95em;border-radius:999px;font-size:.92rem;font-weight:700;line-height:1;background:var(--soft);color:var(--muted)}
+.chip::before{content:"";width:.5em;height:.5em;border-radius:50%;background:var(--dot-none)}
+.chip.chile{background:var(--chile-tint);color:var(--chile-ink)}
+.chip.chile::before{background:var(--chile)}
+.chip.cepal{background:var(--cepal-tint);color:var(--cepal-ink)}
+.chip.cepal::before{background:var(--cepal-dot)}
+.hname{margin:12px 0 0;max-width:24ch;min-height:1.3em;font-family:var(--f-display);font-weight:600;font-size:1.15rem;line-height:1.25;text-wrap:balance}
+.hname.next{max-width:30ch;font-family:var(--f-body);font-weight:500;font-size:.9rem;color:var(--muted)}
+
+.rule{width:100%;margin:0 0 14px;border:0;border-top:1.5px solid var(--line)}
+
+.neighbors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nb{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:12px 14px;border-radius:20px;background:var(--soft);text-align:left;transition:transform .12s}
+.nb.next{align-items:flex-end;text-align:right}
+.nb:active{transform:scale(.97)}
+.nb:disabled{opacity:.45;cursor:default}
+.nb .wd{display:flex;align-items:center;gap:3px;font-size:.82rem;font-weight:700;color:var(--muted)}
+.chev{width:14px;height:14px}
+.nb .n{font-family:var(--f-display);font-weight:800;font-stretch:75%;font-size:2.3rem;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.nb .st{display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;line-height:1.2;color:var(--muted)}
+.nb .st::before{content:"";width:8px;height:8px;border-radius:50%;flex:none;background:var(--dot-none)}
+.nb[data-kind="chile"] .n,.nb[data-kind="both"] .n{color:var(--chile)}
+.nb[data-kind="cepal"] .n{color:var(--cepal)}
+.nb[data-kind="chile"] .st{color:var(--chile-ink)}
+.nb[data-kind="chile"] .st::before{background:var(--chile)}
+.nb[data-kind="cepal"] .st{color:var(--cepal-ink)}
+.nb[data-kind="cepal"] .st::before{background:var(--cepal-dot)}
+.nb[data-kind="both"] .st{color:var(--chile-ink)}
+.nb[data-kind="both"] .st::before{background:linear-gradient(90deg,var(--chile) 50%,var(--cepal-dot) 50%)}
+
+.main.go-next{animation:inNext .26s ease-out}
+.main.go-prev{animation:inPrev .26s ease-out}
+@keyframes inNext{from{opacity:.15;transform:translateX(22px)}}
+@keyframes inPrev{from{opacity:.15;transform:translateX(-22px)}}
+
+/* ---------- Vista de meses ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;
+  padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))
+}
+.overlay.open .panel{animation:rise .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}}
+.panel{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+.phead h2{margin:0 0 0 4px;font-family:var(--f-display);font-weight:800;font-size:2.1rem;line-height:1;letter-spacing:-.01em}
+.back{height:44px;display:inline-flex;align-items:center;gap:2px;padding:0 14px 0 8px;border-radius:14px;background:var(--paper);font-weight:700}
+.back .chev{width:18px;height:18px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding-left:4px;font-size:.8rem;font-weight:600;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.legend .lc{background:var(--chile)}
+.legend .le{background:var(--cepal-dot)}
+.legend .lb{background:linear-gradient(90deg,var(--chile) 50%,var(--cepal-dot) 50%)}
+.legend .ls{width:auto;height:auto;border-radius:0;font-style:normal;font-weight:800;color:var(--chile-ink)}
+
+.year{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:600px){.year{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mini{display:flex;flex-direction:column;gap:8px;padding:12px 10px 10px;border-radius:18px;background:var(--paper);text-align:left;transition:transform .12s}
+.mini:active{transform:scale(.98)}
+.mini.cur{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.mt{padding-left:4px;font-family:var(--f-display);font-weight:700;font-size:.98rem;text-transform:capitalize}
+.mgr{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.d{aspect-ratio:1;display:grid;place-items:center;border-radius:50%;font-size:.68rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--ink)}
+.d.sun{color:var(--chile-ink);font-weight:700}
+.d.chile{background:var(--chile-tint);color:var(--chile-ink);font-weight:700}
+.d.cepal{background:var(--cepal-tint);color:var(--cepal-ink);font-weight:700}
+.d.both{background:linear-gradient(135deg,var(--chile-tint) 50%,var(--cepal-tint) 50%);color:var(--chile-ink);font-weight:700}
+.d.today{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.d.sel{background:var(--ink);color:var(--paper)}
+
+.mcard{padding:10px 12px 14px;border-radius:22px;background:var(--paper)}
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mnav h3{margin:0;font-family:var(--f-display);font-weight:700;font-size:1.35rem;text-transform:capitalize}
+.mnav .icon-btn:disabled{opacity:.35;cursor:default}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;text-align:center;font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.wk span:last-child{color:var(--chile-ink)}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.mgrid .d{min-height:40px;border-radius:14px;font-size:1rem;font-weight:600}
+.mgrid .d.today{box-shadow:inset 0 0 0 2px var(--ink)}
+
+.sec{margin:4px 0 0 4px;font-size:.76rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.hol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hol button{width:100%;display:grid;grid-template-columns:52px 1fr;align-items:center;gap:12px;padding:8px 14px 8px 8px;border-radius:18px;background:var(--paper);text-align:left}
+.ld{height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;background:var(--chile-tint);color:var(--chile-ink)}
+.ld b{font-family:var(--f-display);font-weight:800;font-stretch:75%;font-size:1.45rem;line-height:1}
+.ld small{font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.hol [data-kind="cepal"] .ld{background:var(--cepal-tint);color:var(--cepal-ink)}
+.hol [data-kind="both"] .ld{background:linear-gradient(135deg,var(--chile-tint) 50%,var(--cepal-tint) 50%)}
+.ln{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ln strong{font-weight:700;line-height:1.25}
+.ln span{font-size:.8rem;font-weight:600;color:var(--muted)}
+.empty{margin:0;padding:14px 16px;border-radius:18px;background:var(--paper);color:var(--muted);font-size:.9rem}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* Base: márgenes seguros del iPhone y reinicio mínimo */
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<main class="app" lang="es">
+  <article class="sheet" id="sheet" data-kind="none">
+    <div class="holes" aria-hidden="true"></div>
+    <header class="top">
+      <span class="yday" id="yday">2026</span>
+      <div class="top-actions">
+        <button class="pill" id="todayBtn" type="button" hidden>Hoy</button>
+        <button class="icon-btn" id="openCal" type="button" aria-label="Ver todos los meses">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3.5" fill="none"/>
+            <path d="M3.5 10h17M8 3v4M16 3v4" fill="none"/>
+            <circle cx="8.5" cy="14.2" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="14.2" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="15.5" cy="14.2" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="8.5" cy="17.3" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="17.3" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="main" id="main">
+      <p class="month" id="month">octubre</p>
+      <p class="weekday" id="weekday">Jueves</p>
+      <div class="num" id="num">29</div>
+      <div class="status" id="status"></div>
+      <p class="hname" id="hname"></p>
+    </section>
+
+    <hr class="rule">
+
+    <nav class="neighbors" aria-label="Días cercanos">
+      <button class="nb prev" id="prev" type="button">
+        <span class="wd"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none"/></svg><span></span></span>
+        <span class="n"></span>
+        <span class="st"></span>
+      </button>
+      <button class="nb next" id="next" type="button">
+        <span class="wd"><span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none"/></svg></span>
+        <span class="n"></span>
+        <span class="st"></span>
+      </button>
+    </nav>
+  </article>
+</main>
+
+<div class="overlay" id="overlay" hidden lang="es">
+  <div class="panel" role="dialog" aria-modal="true" aria-label="Calendario 2026">
+    <header class="phead">
+      <h2 id="ptitle">2026</h2>
+      <button class="back" id="back" type="button" hidden>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none"/></svg>2026
+      </button>
+      <button class="icon-btn" id="closeCal" type="button" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none"/></svg>
+      </button>
+    </header>
+    <div class="legend">
+      <span><i class="lc"></i>Feriado Chile</span>
+      <span><i class="le"></i>Feriado CEPAL</span>
+      <span><i class="lb"></i>Ambos</span>
+      <span><i class="ls">D</i>Domingos, feriado Chile</span>
+    </div>
+    <div class="year" id="yearView"></div>
+    <div id="monthView" hidden></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const YEAR = 2026;
+  const CHILE = {
+    "01-01":"Año Nuevo",
+    "04-03":"Viernes Santo",
+    "04-04":"Sábado Santo",
+    "05-01":"Día Nacional del Trabajo",
+    "05-21":"Día de las Glorias Navales",
+    "06-21":"Día Nacional de los Pueblos Indígenas",
+    "06-29":"San Pedro y San Pablo",
+    "07-16":"Día de la Virgen del Carmen",
+    "08-15":"Asunción de la Virgen",
+    "09-18":"Independencia Nacional",
+    "09-19":"Día de las Glorias del Ejército",
+    "10-12":"Encuentro de Dos Mundos",
+    "10-31":"Día de las Iglesias Evangélicas y Protestantes",
+    "11-01":"Día de Todos los Santos",
+    "12-08":"Inmaculada Concepción",
+    "12-25":"Navidad"
+  };
+  const CEPAL = {
+    "01-01":"Año Nuevo",
+    "03-20":"Eid al-Fitr",
+    "04-03":"Viernes Santo",
+    "05-01":"Día Nacional del Trabajo",
+    "05-27":"Eid al-Adha",
+    "06-29":"San Pedro y San Pablo",
+    "09-18":"Independencia Nacional",
+    "10-12":"Encuentro de Dos Mundos",
+    "12-08":"Inmaculada Concepción",
+    "12-25":"Navidad"
+  };
+  const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const DIAS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const DIAS_C = ["dom","lun","mar","mié","jue","vie","sáb"];
+
+  const $ = id => document.getElementById(id);
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const pad = n => String(n).padStart(2, "0");
+  const ymd = (y, m, d) => new Date(y, m, d);
+  const add = (d, n) => ymd(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const keyOf = d => pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const inYear = d => d.getFullYear() === YEAR;
+  const daysBetween = (a, b) => Math.round((b - a) / 864e5);
+  const dayOfYear = d => daysBetween(ymd(d.getFullYear(), 0, 1), d) + 1;
+  const today = () => { const t = new Date(); return ymd(t.getFullYear(), t.getMonth(), t.getDate()); };
+  const clamp = d => d.getFullYear() < YEAR ? ymd(YEAR, 0, 1) : d.getFullYear() > YEAR ? ymd(YEAR, 11, 31) : d;
+
+  function info(d) {
+    const dow = d.getDay();
+    if (!inYear(d)) return { kind: "out", dow };
+    const k = keyOf(d);
+    const chileName = CHILE[k] || null, cepalName = CEPAL[k] || null;
+    const chile = !!chileName || dow === 0;
+    const cepal = !!cepalName;
+    const kind = chile && cepal ? "both" : chile ? "chile" : cepal ? "cepal" : "none";
+    return { kind, dow, chile, cepal, named: !!(chileName || cepalName), name: chileName || cepalName || (dow === 0 ? "Día domingo" : null) };
+  }
+  function label(i) {
+    if (i.kind === "both") return "Feriado Chile y CEPAL";
+    if (i.kind === "chile") return "Feriado Chile";
+    if (i.kind === "cepal") return "Feriado CEPAL";
+    if (i.kind === "out") return "Fuera de " + YEAR;
+    return i.dow === 6 ? "No es feriado" : "Día hábil";
+  }
+  function nextHoliday(d) {
+    for (let x = add(d, 1); inYear(x); x = add(x, 1)) if (info(x).named) return x;
+    return null;
+  }
+
+  let cur = clamp(today());
+  let lastToday = today();
+  let viewMonth = cur.getMonth();
+
+  const $sheet = $("sheet"), $main = $("main"), $num = $("num"), $status = $("status"), $hname = $("hname");
+  const $prev = $("prev"), $next = $("next"), $todayBtn = $("todayBtn");
+  const $ov = $("overlay"), $year = $("yearView"), $monthView = $("monthView"), $ptitle = $("ptitle"), $back = $("back");
+
+  function neighbor(el, d) {
+    const i = info(d);
+    el.dataset.kind = i.kind;
+    el.disabled = i.kind === "out";
+    el.querySelector(".wd span").textContent = cap(DIAS[d.getDay()]);
+    el.querySelector(".n").textContent = d.getDate();
+    el.querySelector(".st").textContent = label(i);
+    el.setAttribute("aria-label", cap(DIAS[d.getDay()]) + " " + d.getDate() + " de " + MESES[d.getMonth()] + ": " + label(i));
+  }
+
+  function render(dir) {
+    const i = info(cur), t = today(), isToday = same(cur, t);
+    $sheet.dataset.kind = i.kind;
+    $("month").textContent = MESES[cur.getMonth()];
+    $("weekday").textContent = cap(DIAS[i.dow]);
+    $num.textContent = cur.getDate();
+    $("yday").textContent = (isToday ? "Hoy" : YEAR) + " · día " + dayOfYear(cur) + " de 365";
+    $todayBtn.hidden = isToday || !inYear(t);
+
+    let chips = "";
+    if (i.chile) chips += '<span class="chip chile">Feriado Chile</span>';
+    if (i.cepal) chips += '<span class="chip cepal">Feriado CEPAL</span>';
+    $status.innerHTML = chips || '<span class="chip">' + label(i) + "</span>";
+
+    if (i.name) {
+      $hname.className = "hname";
+      $hname.textContent = i.name;
+    } else {
+      const n = nextHoliday(cur);
+      $hname.className = "hname next";
+      if (n) {
+        const diff = daysBetween(cur, n);
+        $hname.textContent = "Próximo feriado: " + DIAS[n.getDay()] + " " + n.getDate() + " de " + MESES[n.getMonth()] + ", " + (diff === 1 ? "mañana" : "en " + diff + " días");
+      } else {
+        $hname.textContent = "No quedan feriados en " + YEAR;
+      }
+    }
+
+    neighbor($prev, add(cur, -1));
+    neighbor($next, add(cur, 1));
+
+    if (dir) {
+      $main.classList.remove("go-next", "go-prev");
+      void $main.offsetWidth;
+      $main.classList.add(dir > 0 ? "go-next" : "go-prev");
+    }
+  }
+
+  function go(n) {
+    const d = add(cur, n);
+    if (!inYear(d)) return;
+    cur = d;
+    render(n);
+  }
+  function setDate(d) {
+    const dir = Math.sign(daysBetween(cur, d));
+    cur = clamp(d);
+    render(dir);
+  }
+
+  $prev.addEventListener("click", () => go(-1));
+  $next.addEventListener("click", () => go(1));
+  $todayBtn.addEventListener("click", () => setDate(today()));
+
+  // Deslizar a izquierda o derecha para cambiar de día
+  let sx = null, sy = 0;
+  $sheet.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) { sx = null; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  $sheet.addEventListener("touchend", e => {
+    if (sx === null) return;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    sx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
+  // ---------- Vista de meses ----------
+  function dayClass(dt) {
+    const i = info(dt), c = [];
+    if (i.named) c.push(i.kind);
+    else if (i.kind === "chile") c.push("sun");
+    if (same(dt, today())) c.push("today");
+    if (same(dt, cur)) c.push("sel");
+    return c.join(" ");
+  }
+  const offset = m => (ymd(YEAR, m, 1).getDay() + 6) % 7;
+  const daysIn = m => ymd(YEAR, m + 1, 0).getDate();
+
+  function showYear() {
+    const t = today();
+    let h = "";
+    for (let m = 0; m < 12; m++) {
+      const isCur = inYear(t) && t.getMonth() === m;
+      h += '<button type="button" class="mini' + (isCur ? " cur" : "") + '" data-m="' + m + '" aria-label="Ver ' + MESES[m] + '">';
+      h += '<span class="mt">' + MESES[m] + '</span><span class="mgr" aria-hidden="true">';
+      for (let k = 0; k < offset(m); k++) h += "<span></span>";
+      for (let d = 1; d <= daysIn(m); d++) h += '<span class="d ' + dayClass(ymd(YEAR, m, d)) + '">' + d + "</span>";
+      h += "</span></button>";
+    }
+    $year.innerHTML = h;
+    $year.hidden = false;
+    $monthView.hidden = true;
+    $ptitle.hidden = false;
+    $back.hidden = true;
+  }
+
+  function showMonth(m) {
+    viewMonth = m;
+    let h = '<div class="mcard"><div class="mnav">';
+    h += '<button type="button" class="icon-btn" data-step="-1" aria-label="Mes anterior"' + (m === 0 ? " disabled" : "") + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none"/></svg></button>';
+    h += "<h3>" + MESES[m] + " " + YEAR + "</h3>";
+    h += '<button type="button" class="icon-btn" data-step="1" aria-label="Mes siguiente"' + (m === 11 ? " disabled" : "") + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none"/></svg></button>';
+    h += '</div><div class="wk" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="mgrid">';
+    for (let k = 0; k < offset(m); k++) h += "<span></span>";
+    for (let d = 1; d <= daysIn(m); d++) {
+      const dt = ymd(YEAR, m, d);
+      h += '<button type="button" class="d ' + dayClass(dt) + '" data-d="' + d + '" aria-label="' + cap(DIAS[dt.getDay()]) + " " + d + " de " + MESES[m] + ": " + label(info(dt)) + '">' + d + "</button>";
+    }
+    h += "</div></div>";
+
+    let list = "";
+    for (let d = 1; d <= daysIn(m); d++) {
+      const dt = ymd(YEAR, m, d), i = info(dt);
+      if (!i.named) continue;
+      const who = i.kind === "both" ? "Chile y CEPAL" : i.kind === "chile" ? "Chile" : "CEPAL";
+      list += '<li><button type="button" data-d="' + d + '" data-kind="' + i.kind + '"><span class="ld"><b>' + d + "</b><small>" + DIAS_C[dt.getDay()] + '</small></span><span class="ln"><strong>' + i.name + "</strong><span>Feriado " + who + "</span></span></button></li>";
+    }
+    h += '<p class="sec">Feriados de ' + MESES[m] + "</p>";
+    h += list ? '<ul class="hol">' + list + "</ul>" : '<p class="empty">Este mes no tiene feriados, aparte de los domingos.</p>';
+
+    $monthView.innerHTML = h;
+    $monthView.hidden = false;
+    $year.hidden = true;
+    $ptitle.hidden = true;
+    $back.hidden = false;
+    $ov.scrollTop = 0;
+  }
+
+  function openCal() {
+    showYear();
+    $ov.hidden = false;
+    $ov.scrollTop = 0;
+    $ov.classList.remove("open");
+    void $ov.offsetWidth;
+    $ov.classList.add("open");
+    document.body.style.overflow = "hidden";
+    $("closeCal").focus({ preventScroll: true });
+  }
+  function closeCal() {
+    $ov.hidden = true;
+    $ov.classList.remove("open");
+    document.body.style.overflow = "";
+    $("openCal").focus({ preventScroll: true });
+  }
+
+  $("openCal").addEventListener("click", openCal);
+  $("closeCal").addEventListener("click", closeCal);
+  $back.addEventListener("click", showYear);
+  $year.addEventListener("click", e => {
+    const b = e.target.closest("[data-m]");
+    if (b) showMonth(+b.dataset.m);
+  });
+  $monthView.addEventListener("click", e => {
+    const s = e.target.closest("[data-step]");
+    if (s && !s.disabled) { showMonth(viewMonth + +s.dataset.step); return; }
+    const b = e.target.closest("[data-d]");
+    if (b) { setDate(ymd(YEAR, viewMonth, +b.dataset.d)); closeCal(); }
+  });
+
+  document.addEventListener("keydown", e => {
+    if (!$ov.hidden) { if (e.key === "Escape") closeCal(); return; }
+    if (e.key === "ArrowLeft") go(-1);
+    else if (e.key === "ArrowRight") go(1);
+  });
+
+  // Si la app queda abierta y cambia el día, avanzar a la nueva fecha
+  function checkNewDay() {
+    const t = today();
+    if (same(t, lastToday)) return;
+    if (same(cur, clamp(lastToday))) cur = clamp(t);
+    lastToday = t;
+    render(0);
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkNewDay(); });
+  setInterval(checkNewDay, 60000);
+
+  render(0);
+  window.__cal = { info, label, setDate };
+})();
+</script>
+</body>
+</html>
